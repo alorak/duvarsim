@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engel Simülasyonu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --zemin:#D5D1C8; --panel:#EFEDE7; --panel-2:#E3E0D8;
+  --murekkep:#16181B; --soluk:#5B5F63;
+  --cizgi:rgba(22,24,27,.16); --cizgi-koyu:rgba(22,24,27,.34);
+  --beton-koyu:#6E6960; --celik:#1E4A5A; --uyari:#8A3A1E; --dikkat:#8A6A12;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--zemin);color:var(--murekkep);
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.sarmal{width:100%;max-width:100%;margin:0;padding:20px 24px 60px}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+h1{font-size:26px;font-weight:600;letter-spacing:-.015em;margin:0;line-height:1.2}
+.feragat-rozet{font-size:12px;color:var(--soluk);background:var(--panel);border:1px solid var(--cizgi-koyu);
+  padding:3px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.feragat-rozet i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--dikkat)}
+
+.ana-kapsayici{display:grid;grid-template-columns:290px minmax(0,1fr) 290px;gap:16px;align-items:start}
+.ana-alan{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+.sidebar{background:var(--panel);border:1px solid var(--cizgi-koyu);border-radius:2px;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.sidebar-baslik{font-size:12px;font-weight:600;color:var(--soluk);text-transform:uppercase;letter-spacing:.05em}
+
+.frekans-gosterge{display:flex;flex-direction:column;gap:6px}
+.frekans-ust-satir{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.deger{font-size:28px;font-weight:500;letter-spacing:-.02em;line-height:1.1;cursor:pointer}
+.deger small{font-size:15px;color:var(--soluk);margin-left:3px}
+.btn-frekans-duzenle{display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:11.5px;color:var(--soluk);
+  background:var(--panel-2);border:1px solid var(--cizgi-koyu);border-radius:2px;padding:3px 7px;cursor:pointer;
+  transition:all .15s}
+.btn-frekans-duzenle:hover{background:var(--murekkep);color:var(--panel);border-color:var(--murekkep)}
+.btn-frekans-duzenle svg{width:11px;height:11px}
+
+.frekans-giris-panel{margin-top:4px;padding:10px;background:var(--panel-2);border:1px solid var(--cizgi-koyu);border-radius:2px;
+  display:flex;flex-direction:column;gap:8px}
+.frekans-giris-panel[hidden]{display:none}
+.frekans-giris-satir{display:flex;gap:6px}
+.manuel-input{flex:1;min-width:0;padding:5px 8px;font-size:13px;border:1px solid var(--cizgi-koyu);border-radius:2px;
+  background:var(--panel);color:var(--murekkep);outline:none}
+.manuel-input:focus{border-color:var(--celik);outline:2px solid rgba(30,74,90,.2)}
+.manuel-birim-select{width:75px;padding:5px 6px;font-size:12.5px;font-weight:600;font-family:inherit;
+  border:1px solid var(--cizgi-koyu);border-radius:2px;background:var(--panel);color:var(--murekkep);cursor:pointer;outline:none}
+.manuel-birim-select:focus{border-color:var(--celik)}
+.frekans-giris-butonlar{display:flex;gap:6px}
+.btn-giris-uygula{flex:1;padding:5px 10px;font-family:inherit;font-size:12px;font-weight:600;color:var(--panel);
+  background:var(--celik);border:1px solid var(--celik);border-radius:2px;cursor:pointer;transition:background .15s}
+.btn-giris-uygula:hover{background:var(--murekkep);border-color:var(--murekkep)}
+.btn-giris-iptal{padding:5px 10px;font-family:inherit;font-size:12px;color:var(--soluk);
+  background:transparent;border:1px solid var(--cizgi-koyu);border-radius:2px;cursor:pointer;transition:all .15s}
+.btn-giris-iptal:hover{background:#E0DCD3;color:var(--murekkep)}
+.frekans-hata-not{font-size:11px;color:var(--uyari);line-height:1.3}
+.frekans-hata-not[hidden]{display:none}
+
+.bant-ve-dalga{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-top:2px}
+.bant-adi{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--cizgi-koyu)}
+.dalgaboyu{font-size:12px;color:var(--soluk)}
+
+.kaydirici-alani{display:flex;flex-direction:column}
+.kaydirici-alani label{margin-bottom:4px}
+#cetvel{display:block;width:100%;height:auto;margin-top:4px;cursor:pointer;touch-action:none}
+
+.ornek-frekans-alani,.kaynak-gucu-alani,.malzeme-alani,.kalinlik-alani{display:flex;flex-direction:column;gap:6px}
+.ornek-frekans-alani{padding-top:8px;border-top:1px solid var(--cizgi)}
+.kaynak-gucu-alani{padding-top:10px;border-top:1px solid var(--cizgi)}
+.kaynak-ust-satir{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.guc-deger{font-size:13px;font-weight:500}
+.guc-giris-panel{padding:8px;background:var(--panel-2);border:1px solid var(--cizgi-koyu);border-radius:2px;
+  display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.guc-giris-panel[hidden]{display:none}
+.kalinlik-alani{padding-top:10px;border-top:1px solid var(--cizgi)}
+.kalin-ust{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+
+.aci-ve-pol-alani{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid var(--cizgi)}
+.pol-secim-satir{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+.pol-butonlar{display:flex;gap:4px}
+.pol-etiket{font-size:11px;color:var(--soluk);cursor:pointer;display:flex;align-items:center;gap:3px;
+  background:var(--panel-2);border:1px solid var(--cizgi-koyu);padding:2px 6px;border-radius:2px;user-select:none;transition:all .15s}
+.pol-etiket:has(input:checked){background:var(--celik);color:#fff;border-color:var(--celik);font-weight:600}
+.pol-etiket input{display:none}
+
+.sidebar-kunye-alani{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--cizgi)}
+.sidebar-alt-baslik{font-size:11.5px;font-weight:600;color:var(--soluk);text-transform:uppercase;letter-spacing:.05em}
+.sidebar-ozellikler{display:flex;flex-direction:column;gap:8px}
+.sidebar-ozellikler .ozellik{border-left:2px solid var(--beton-koyu);padding-left:8px}
+.sidebar-ozellikler .ozellik b{display:block;font-size:11.5px;font-weight:500;color:var(--soluk);margin-bottom:1px}
+.sidebar-ozellikler .ozellik span{font-size:13px;display:block;line-height:1.25}
+.sidebar-ozellikler .ozellik span.mono{font-size:12px;letter-spacing:-.01em}
+.sidebar-ozellikler .ozellik span.ikincil{font-size:11px;color:var(--soluk);margin-top:1px}
+.gecerlilik-metin{font-size:12px;color:var(--soluk);line-height:1.45;background:rgba(22,24,27,.04);padding:8px 10px;border-radius:2px;border:1px solid var(--cizgi)}
+.gecerlilik-metin b{color:var(--murekkep);font-weight:600}
+
+.select-sarmal{position:relative;width:100%}
+.frekans-select{width:100%;padding:7px 10px;font-family:inherit;font-size:13px;font-weight:500;color:var(--murekkep);
+  background:var(--panel-2);border:1px solid var(--cizgi-koyu);border-radius:2px;cursor:pointer;outline:none;
+  transition:border-color .15s,background .15s}
+.frekans-select:hover{background:#E0DCD3;border-color:var(--murekkep)}
+.frekans-select:focus-visible{outline:2px solid var(--celik);outline-offset:1px}
+
+.sahne{position:relative;background:var(--panel);border:1px solid var(--cizgi-koyu);border-radius:2px;overflow:hidden}
+#sahne{display:block;width:100%;height:auto}
+.sahne-not{position:absolute;left:12px;bottom:9px;font-size:11.5px;color:var(--soluk);
+  background:rgba(239,237,231,.86);padding:2px 7px;border-radius:2px;pointer-events:none}
+
+.satir-basi{font-size:13px;color:var(--soluk);margin:0}
+.kalin-deger{font-size:22px;font-weight:500;min-width:80px;text-align:right}
+.tipik{font-size:12px;color:var(--soluk);margin:6px 0 0;line-height:1.4}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:ew-resize;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--cizgi-koyu);border-radius:2px}
+input[type=range]::-moz-range-track{height:4px;background:var(--cizgi-koyu);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:26px;margin-top:-11px;border-radius:2px;background:var(--murekkep);border:2px solid var(--panel)}
+input[type=range]::-moz-range-thumb{width:16px;height:26px;border-radius:2px;background:var(--murekkep);border:2px solid var(--panel)}
+input[type=range]:focus-visible{outline:2px solid var(--celik);outline-offset:3px}
+
+.alt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:stretch}
+.kutu{background:var(--panel);border:1px solid var(--cizgi-koyu);border-radius:2px;padding:16px 18px;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.kutu h2{font-size:14px;font-weight:600;margin:0 0 12px}
+
+.enerji{display:flex;height:30px;border:1px solid var(--cizgi-koyu);border-radius:2px;overflow:hidden;margin-bottom:6px}
+.enerji div{display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;transition:width .12s linear;min-width:0;overflow:hidden;white-space:nowrap}
+.e-yan{background:var(--celik)} .e-yut{background:var(--beton-koyu)} .e-gec{background:var(--uyari)}
+.efsane{display:flex;gap:16px;font-size:12px;color:var(--soluk);margin-bottom:16px;flex-wrap:wrap}
+.efsane span{display:flex;align-items:center;gap:5px}
+.nokta{width:9px;height:9px;border-radius:1px;display:inline-block}
+
+table.oku{width:100%;border-collapse:collapse;font-size:13px}
+table.oku th{text-align:left;font-weight:400;color:var(--soluk);padding:5px 8px 5px 0;border-bottom:1px solid var(--cizgi);vertical-align:baseline;line-height:1.35}
+table.oku td{text-align:right;padding:5px 0;border-bottom:1px solid var(--cizgi);vertical-align:baseline;line-height:1.35;word-break:break-word}
+table.oku tr:last-child th,table.oku tr:last-child td{border-bottom:none}
+
+.sinyal-durum-kutu{margin-top:10px;padding:9px 12px;background:var(--panel-2);border:1px solid var(--cizgi-koyu);border-radius:2px;display:flex;flex-direction:column;gap:6px}
+.sinyal-durum-ust{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sinyal-durum-baslik{font-size:11.5px;font-weight:600;color:var(--soluk);text-transform:uppercase;letter-spacing:.04em}
+.sinyal-rozet{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid currentColor}
+.rozet-mukemmel{color:#2B6E3F;background:rgba(43,110,63,.1)}
+.rozet-iyi{color:#1E5E4E;background:rgba(30,94,78,.1)}
+.rozet-orta{color:#8A6A12;background:rgba(138,106,18,.1)}
+.rozet-zayif{color:#A85507;background:rgba(168,85,7,.1)}
+.rozet-kopuk{color:#8A2016;background:rgba(138,32,22,.1)}
+
+.sinyal-metre{height:5px;background:var(--cizgi);border-radius:2px;overflow:hidden}
+.sinyal-metre-dolgu{height:100%;background:var(--celik);transition:width .15s, background-color .15s}
+
+.butce-dokum{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11.5px;color:var(--soluk);padding-top:4px;border-top:1px solid var(--cizgi)}
+.butce-dokum b{color:var(--murekkep);font-family:'IBM Plex Mono',monospace;font-size:11px}
+
+.kutu-baslik-satir{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kutu-baslik-satir h2{margin:0}
+.btn-buyut{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:12px;color:var(--soluk);
+  background:var(--panel-2);border:1px solid var(--cizgi-koyu);border-radius:2px;padding:3px 8px;cursor:pointer;
+  transition:all .15s}
+.btn-buyut:hover{background:var(--murekkep);color:var(--panel);border-color:var(--murekkep)}
+.btn-buyut svg{width:12px;height:12px}
+
+.tayf-sarmal{position:relative;width:100%;max-width:100%;overflow:hidden;cursor:zoom-in;border-radius:2px}
+#tayf{display:block;width:100%;max-width:100%;height:auto}
+.tayf-alt{font-size:12px;color:var(--soluk);margin-top:auto;padding-top:8px;line-height:1.4}
+.tayf-zoom-ipucu{position:absolute;right:8px;top:8px;font-size:11px;font-weight:500;color:var(--soluk);
+  background:rgba(239,237,231,.92);border:1px solid var(--cizgi-koyu);padding:2px 7px;border-radius:2px;
+  opacity:0;transition:opacity .15s;pointer-events:none}
+.tayf-sarmal:hover .tayf-zoom-ipucu{opacity:1}
+
+.tayf-dialog{border:none;border-radius:4px;padding:0;background:transparent;max-width:96vw;width:1240px;outline:none}
+.tayf-dialog::backdrop{background:rgba(22,24,27,.6);backdrop-filter:blur(4px)}
+.dialog-icerik{background:var(--panel);border:1px solid var(--cizgi-koyu);border-radius:4px;padding:20px 24px;
+  box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:14px}
+.dialog-ust{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--cizgi);padding-bottom:12px}
+.dialog-baslik{font-size:18px;font-weight:600;margin:0;color:var(--murekkep)}
+.dialog-ipucu{font-size:12.5px;color:var(--soluk);margin-top:3px}
+.dialog-kapat{font-size:16px;line-height:1;background:transparent;border:1px solid var(--cizgi-koyu);border-radius:2px;
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--soluk);transition:all .15s}
+.dialog-kapat:hover{background:var(--murekkep);color:var(--panel);border-color:var(--murekkep)}
+.dialog-grafik-alani{width:100%;cursor:crosshair;background:var(--panel-2);border:1px solid var(--cizgi);border-radius:2px}
+#tayfModal{display:block;width:100%;height:auto}
+.dialog-alt-metin{font-size:13px;line-height:1.5;margin:0;padding-top:4px}
+
+.kunye{margin-top:16px;background:var(--panel);border:1px solid var(--cizgi-koyu);border-radius:2px;padding:20px 22px}
+.kunye h2{font-size:14.5px;font-weight:600;margin:0 0 16px;color:var(--murekkep)}
+.kunye-icerik{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px 28px}
+.kunye p{margin:0;font-size:13.5px;color:var(--soluk);line-height:1.55;max-width:100%}
+.kunye-kaynak{margin-top:14px;padding-top:12px;border-top:1px solid var(--cizgi);font-size:12.5px;color:var(--soluk);line-height:1.5}
+.gecerli{display:inline-block;padding:1px 6px;border:1px solid var(--cizgi-koyu);border-radius:2px;font-size:12px;margin-right:4px}
+
+@media (max-width:1360px){
+  .alt{grid-template-columns:1fr}
+}
+@media (max-width:1100px){
+  .ana-kapsayici{grid-template-columns:1fr 1fr;align-items:start}
+  .ana-alan{grid-column:1 / -1;order:-1}
+  .alt{grid-template-columns:1fr}
+}
+@media (max-width:700px){
+  .ana-kapsayici{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){ .enerji div{transition:none} }
+</style>
+</head>
+<body>
+<div class="sarmal">
+
+<header>
+  <h1>Engel Simülasyonu</h1>
+  <div class="feragat-rozet"><i></i>Gösterim amaçlıdır, bilimsel veri olarak kullanmayınız</div>
+</header>
+
+<div class="ana-kapsayici">
+  <aside class="sidebar">
+    <div class="sidebar-baslik">Kaynak ve Dalga Denetimi</div>
+
+    <div class="frekans-gosterge">
+      <div class="frekans-ust-satir">
+        <div class="deger mono" id="fDeger" title="Değeri değiştirmek için tıklayın">2.400<small>GHz</small></div>
+        <button type="button" class="btn-frekans-duzenle" id="btnFrekansDuzenle" title="Değer girerek ayarla">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Düzenle</span>
+        </button>
+      </div>
+      <div class="bant-ve-dalga">
+        <div class="bant-adi" id="bantAdi">UHF · GSM, Wi‑Fi</div>
+        <div class="dalgaboyu mono" id="lamDeger">λ₀ = 125 mm</div>
+      </div>
+      <div class="frekans-giris-panel" id="frekansGirisPanel" hidden>
+        <div class="frekans-giris-satir">
+          <input type="number" id="manuelFrekansInput" step="any" min="0.000001" placeholder="Frekans değeri" class="manuel-input mono">
+          <select id="manuelBirimSelect" class="manuel-birim-select">
+            <option value="1e6" selected>MHz</option>
+            <option value="1e9">GHz</option>
+            <option value="1e3">kHz</option>
+            <option value="1">Hz</option>
+            <option value="1e12">THz</option>
+          </select>
+        </div>
+        <div class="frekans-giris-butonlar">
+          <button type="button" id="btnFrekansUygula" class="btn-giris-uygula">Uygula</button>
+          <button type="button" id="btnFrekansIptal" class="btn-giris-iptal">Vazgeç</button>
+        </div>
+        <div class="frekans-hata-not" id="frekansHataNot" hidden>1 MHz – 1 PHz arası geçerli bir değer giriniz.</div>
+      </div>
+    </div>
+
+    <div class="kaydirici-alani">
+      <input type="range" id="fSlider" min="6" max="15" step="0.001" value="9.3802"
+             aria-label="Frekans, logaritmik olarak 1 MHz ile 1 PHz arasında">
+      <canvas id="cetvel" width="560" height="80"></canvas>
+    </div>
+
+    <div class="ornek-frekans-alani">
+      <label for="hazirSelect" class="satir-basi">Örnek Frekanslar</label>
+      <div class="select-sarmal">
+        <select id="hazirSelect" class="frekans-select">
+          <option value="custom">Özel (Custom)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="kaynak-gucu-alani">
+      <div class="kaynak-ust-satir">
+        <label for="gucSelect" class="satir-basi">Kaynak Gücü (P<sub>tx</sub>)</label>
+        <div class="guc-deger mono" id="gucGosterge">+20 dBm</div>
+      </div>
+      <div class="select-sarmal">
+        <select id="gucSelect" class="frekans-select">
+          <option value="20" selected>+20 dBm (100 mW · Wi-Fi AP / Telefon)</option>
+          <option value="0">0 dBm (1 mW · Laboratuvar Referansı)</option>
+          <option value="14">+14 dBm (25 mW · Bluetooth, Zigbee)</option>
+          <option value="23">+23 dBm (200 mW · 4G/5G Maks. Güç)</option>
+          <option value="30">+30 dBm (1 W · Dış Ortam Wi-Fi)</option>
+          <option value="43">+43 dBm (20 W · Mikro Hücre / Baz)</option>
+          <option value="46">+46 dBm (40 W · Makro Baz İstasyonu)</option>
+          <option value="custom">Özel Değer (Custom)...</option>
+        </select>
+      </div>
+      <div class="guc-giris-panel" id="gucGirisPanel" hidden>
+        <div class="frekans-giris-satir">
+          <input type="number" id="manuelGucInput" step="any" placeholder="Güç değeri" value="20" class="manuel-input mono">
+          <select id="manuelGucBirimSelect" class="manuel-birim-select">
+            <option value="dbm" selected>dBm</option>
+            <option value="mw">mW</option>
+            <option value="w">W</option>
+          </select>
+        </div>
+        <div class="frekans-giris-butonlar">
+          <button type="button" id="btnGucUygula" class="btn-giris-uygula">Uygula</button>
+          <button type="button" id="btnGucIptal" class="btn-giris-iptal">Vazgeç</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="aci-ve-pol-alani">
+      <div class="kalin-ust">
+        <label for="aciSlider" class="satir-basi">Geliş Açısı (θ)</label>
+        <div class="kalin-deger mono" id="aciDeger" style="font-size:16px">0° (Dik)</div>
+      </div>
+      <input type="range" id="aciSlider" min="0" max="75" step="1" value="0">
+      
+      <div class="pol-secim-satir">
+        <label class="satir-basi" style="font-size:12px">Polarizasyon</label>
+        <div class="pol-butonlar">
+          <label class="pol-etiket"><input type="radio" name="pol" value="TE" checked> <span>TE (s-pol)</span></label>
+          <label class="pol-etiket"><input type="radio" name="pol" value="TM"> <span>TM (p-pol)</span></label>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="ana-alan">
+    <div class="sahne">
+      <canvas id="sahne" width="1160" height="430"></canvas>
+      <div class="sahne-not" id="sahneNot"></div>
+    </div>
+
+    <div class="alt">
+      <section class="kutu">
+        <h2>Levhaya çarpan gücün dağılımı</h2>
+        <div class="enerji" role="img" id="enerjiCubuk">
+          <div class="e-yan" id="cYan"></div><div class="e-yut" id="cYut"></div><div class="e-gec" id="cGec"></div>
+        </div>
+        <div class="efsane">
+          <span><i class="nokta" style="background:var(--celik)"></i>Yansıyan</span>
+          <span><i class="nokta" style="background:var(--beton-koyu)"></i>Yutulan</span>
+          <span><i class="nokta" style="background:var(--uyari)"></i>Geçen</span>
+        </div>
+        <table class="oku"><tbody>
+          <tr><th>Geçen güç oranı |T|²</th><td class="mono" id="oT">—</td></tr>
+          <tr><th>Levhanın getirdiği kayıp</th><td class="mono" id="oTdB">—</td></tr>
+          <tr><th>Yansıyan güç oranı |Γ|²</th><td class="mono" id="oR">—</td></tr>
+          <tr><th>Yansımanın aynasal payı</th><td class="mono" id="oSpec">—</td></tr>
+          <tr><th>Malzeme içinde nüfuz derinliği</th><td class="mono" id="oPen">—</td></tr>
+          <tr><th>Kırılma indisi n′ − jκ</th><td class="mono" id="oN">—</td></tr>
+          <tr><th>İletkenlik σ</th><td class="mono" id="oSig">—</td></tr>
+          <tr><th>Serbest uzay kaybı (FSPL, 5,3 m)</th><td class="mono" id="oFspl">—</td></tr>
+          <tr><th id="hLink">Alıcıda güç (P<sub>rx</sub>, Friis, 5,3 m)</th><td class="mono" id="oLink" style="font-weight:600">—</td></tr>
+        </tbody></table>
+        
+        <div class="sinyal-durum-kutu" id="sinyalDurumKutu">
+          <div class="sinyal-durum-ust">
+            <span class="sinyal-durum-baslik">Alıcı Sinyal Kalitesi</span>
+            <span class="sinyal-rozet rozet-iyi" id="sinyalRozet">🟢 İyi (−49.2 dBm)</span>
+          </div>
+          <div class="sinyal-metre"><div class="sinyal-metre-dolgu" id="sinyalMetreDolgu" style="width:75%"></div></div>
+          <div class="butce-dokum" id="butceDokum">
+            <span>P<sub>tx</sub>: <b id="dokumPtx">+20.0 dBm</b></span>
+            <span>FSPL: <b id="dokumFspl">−54.6 dB</b></span>
+            <span>Duvar: <b id="dokumDuvar">−14.6 dB</b></span>
+            <span>P<sub>rx</sub>: <b id="dokumPrx">−49.2 dBm</b></span>
+          </div>
+        </div>
+        <div class="uyari-kutu" id="uyariKutu" hidden></div>
+      </section>
+
+      <section class="kutu kutu-tayf">
+        <div class="kutu-baslik-satir">
+          <h2>Frekansa göre geçiş ve yansıma</h2>
+          <button type="button" class="btn-buyut" id="btnBuyut" title="Grafiği büyük ekranda aç">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            <span>Büyüt</span>
+          </button>
+        </div>
+        <div class="tayf-sarmal" id="tayfSarmal" title="Büyütmek için tıklayın">
+          <canvas id="tayf" width="760" height="340"></canvas>
+          <span class="tayf-zoom-ipucu">⤢ Büyüt</span>
+        </div>
+        <p class="tayf-alt" id="tayfAlt"></p>
+      </section>
+    </div>
+  </main>
+
+  <aside class="sidebar levha-sidebar">
+    <div class="sidebar-baslik">Levha ve Malzeme</div>
+
+    <div class="malzeme-alani">
+      <label for="malzemeSelect" class="satir-basi">Malzeme Türü</label>
+      <div class="select-sarmal">
+        <select id="malzemeSelect" class="frekans-select"></select>
+      </div>
+    </div>
+
+    <div class="kalinlik-alani">
+      <div class="kalin-ust">
+        <label for="kSlider" class="satir-basi">Kalınlık</label>
+        <div class="kalin-deger mono" id="kDeger">200 mm</div>
+      </div>
+      <input type="range" id="kSlider" min="1" max="100" step="1" value="50">
+      <p class="tipik" id="tipikNot"></p>
+    </div>
+
+    <div class="sidebar-kunye-alani">
+      <div class="sidebar-alt-baslik">Malzeme Künyesi</div>
+      <div class="sidebar-ozellikler" id="kunyeGr"></div>
+      <div class="gecerlilik-metin" id="gecerlilikNot"></div>
+    </div>
+  </aside>
+</div>
+
+<section class="kunye">
+  <h2>Modelin Sınırları ve Teorik Temeller</h2>
+  <div class="kunye-icerik">
+    <p><b>Hesap.</b> Karmaşık bağıl geçirgenlik ε<sub>c</sub> = ε′r − jσ/(ωε₀) alınır, n = √ε<sub>c</sub> bulunur ve
+    hava–levha–hava katmanı için dalga denklemi üç bölgede tam olarak çözülür. Levha içindeki çoklu yansımalar da
+    hesaba katılır; ince ve az kayıplı malzemelerde eğri üzerinde gördüğünüz düzenli dalgalanmalar bu Fabry–Pérot
+    girişiminden gelir, sayısal gürültü değildir. Yansımanın aynasal payı Rayleigh pürüzlülük çarpanı
+    ρ<sub>s</sub> = exp[−8(π·h<sub>rms</sub>·cosθ/λ)²] ile ayrılır. Geliş açısı her malzeme için dik (θ = 0°).</p>
+    
+    <p><b>Ölçümlerle karşılaştırma.</b> Model ideal bir düzlem dalganın, tek katmanlı, kuru ve sonsuz geniş bir
+    levhadan dik geçişini verir. Sahada ölçülen nüfuz kayıpları tipik olarak 1–3 dB daha yüksek çıkar: gerçek
+    duvarlar çok katmanlıdır (ısıcam iki cam + hava, alçıpan bölme iki levha + iskelet), ahşabın nem oranı
+    iletkenliği birkaç kat artırır, kenar kırınımı ve anten hizası da işin içine girer. Örnek olarak 73 GHz’de
+    6 mm berrak cam için ölçülen 2–9 dB aralığına karşı model 6 dB veriyor; 6,75 GHz’de 2 cm huş paneli için
+    ölçülen 2,4 dB’ye karşı 1,1 dB. Mertebe ve eğilim doğru, tek tek sayılar alt sınır kabul edilmeli.
+    Tuğla, geçerlilik aralığı en dar (1–10 GHz) ve verisi en zayıf olan satırdır; oradaki değerlere en az güvenin.</p>
+    
+    <p><b>Görünür bölge.</b> ITU modeli bir radyo modelidir ve optik frekanslar için kurulmamıştır. Beton, tuğla,
+    alçıpan ve ahşapta dışa vurum yine de doğru tarafta kalır — bu malzemeler gerçekten opaktır — ama doğru
+    sonuca yanlış sebeple varır: gerçekte ışığı durduran şey iletkenlik değil, dalga boyundan büyük tanelerin
+    yaptığı hacim saçılması ve elektronik soğurmadır. Camda ise dışa vurum tamamen çuvallıyordu; onun için ayrı
+    bir tam tayf modeli kuruldu ve 4 mm cam görünür ışığın ~%88’ini geçiriyor, ~%8’i iki yüzeyden yansıyor.
+    Beyaz PVC de opak çıkar ve bu doğrudur, ama sebebi TiO₂ pigmentinin saçmasıdır; şeffaf PVC saydamdır ve bu
+    model onu temsil etmez.</p>
+    
+    <p><b>Girişim saçakları.</b> Levha içindeki çoklu yansımalar Fabry–Pérot saçakları üretir. 4 mm camda saçak
+    aralığı yalnızca 25 GHz’dir; görünür bölgede bir oktav içinde on binlerce saçak vardır ve hiçbir gerçek kaynak
+    bunları çözemez. Saçak aralığı %0,2’lik bir bandın altına düştüğünde uygulama gücü o bant üzerinde ortalar,
+    yani ölçülebilir olanı gösterir. Radyo frekanslarında saçaklar gerçekten çözülebilir olduğu için ortalama
+    uygulanmaz ve eğri üzerinde görünür kalırlar.</p>
+  </div>
+  
+  <p class="kunye-kaynak">Kaynak: ITU‑R P.2040‑3 (08/2023), <i>Effects of building materials and structures on radiowave propagation
+  above about 100 MHz</i>, Bölüm 3 ve Tablo 3. Pürüzlülük ölçütü: Rayleigh, h<sub>c</sub> = λ/(8cosθ).</p>
+</section>
+
+<dialog id="tayfDialog" class="tayf-dialog">
+  <div class="dialog-icerik">
+    <div class="dialog-ust">
+      <div>
+        <h2 id="modalBaslik" class="dialog-baslik">Frekansa Göre Geçiş ve Yansıma</h2>
+        <div class="dialog-ipucu">Grafik üzerine tıklayarak çalışma frekansını anlık olarak değiştirebilirsiniz</div>
+      </div>
+      <button type="button" class="dialog-kapat" id="btnModalKapat" aria-label="Kapat">✕</button>
+    </div>
+    <div class="dialog-grafik-alani">
+      <canvas id="tayfModal" width="1400" height="600"></canvas>
+    </div>
+    <p class="tayf-alt dialog-alt-metin" id="modalTayfAlt"></p>
+  </div>
+</dialog>
+
+</div>
+
+<script>
+"use strict";
+const C0=299792458, EPS0=8.8541878128e-12;
+
+/* ── karmaşık sayı ── */
+const K=(re,im)=>({re,im});
+const ka=(x,y)=>K(x.re+y.re,x.im+y.im);
+const kc=(x,y)=>K(x.re-y.re,x.im-y.im);
+const km=(x,y)=>K(x.re*y.re-x.im*y.im, x.re*y.im+x.im*y.re);
+const kb=(x,y)=>{const d=y.re*y.re+y.im*y.im;return K((x.re*y.re+x.im*y.im)/d,(x.im*y.re-x.re*y.im)/d);};
+const kmag=x=>Math.hypot(x.re,x.im);
+const kkok=x=>{const m=Math.sqrt(kmag(x)),a=Math.atan2(x.im,x.re)/2;return K(m*Math.cos(a),m*Math.sin(a));};
+const kus=x=>{const m=Math.exp(x.re);return K(m*Math.cos(x.im),m*Math.sin(x.im));};
+
+/* ── malzemeler ──
+   a,b,c,d : ε′r = a·f^b ,  σ = c·f^d   (f, GHz)
+   f0,f1   : modelin dayandığı ölçüm aralığı (Hz)                              */
+const MALZEMELER = {
+  beton:{ ad:"Beton", tam:"Dökme beton", renk:"#B4AFA5", desen:"beton",
+    a:5.24,b:0,c:0.0462,d:0.7822, f0:1e9,f1:100e9, hrms:0.5e-3,
+    kaynak:"ITU‑R P.2040‑3, Tablo 3", itu:true,
+    kMin:40,kMax:500,kVar:200, tipik:"Perde duvar 200–250 mm, döşeme 150–200 mm, bölme 100 mm.",
+    gorunur:"Opak. Gelen ışığın ~%80’i ilk mikronlarda yutulur, kalanı yüzeyden dağınık saçılır — model doğru tarafta." },
+  tugla:{ ad:"Tuğla", tam:"Tuğla", renk:"#A55E45", desen:"tugla",
+    a:3.91,b:0,c:0.0238,d:0.16, f0:1e9,f1:10e9, hrms:1.5e-3,
+    kaynak:"ITU‑R P.2040‑3, Tablo 3", itu:true,
+    kMin:60,kMax:400,kVar:190, tipik:"Tek tuğla 85–190 mm, çift duvar 300–400 mm.",
+    gorunur:"Opak. Demir oksitler soğurur, gözenekli yüzey saçar." },
+  alcipan:{ ad:"Alçıpan", tam:"Alçıpan (kartonpiyer levha)", renk:"#DCD6CB", desen:"duz",
+    a:2.73,b:0,c:0.0085,d:0.9395, f0:1e9,f1:100e9, hrms:0.05e-3,
+    kaynak:"ITU‑R P.2040‑3, Tablo 3", itu:true,
+    kMin:6,kMax:60,kVar:13, tipik:"Tek kat 12,5 mm; çift kat + iskelet ile bölme 75–125 mm.",
+    gorunur:"Opak. Alçı kristalleri ve karton, ışığı hacimde saçar." },
+  ahsap:{ ad:"Ahşap", tam:"Ahşap", renk:"#B98A52", desen:"ahsap",
+    a:1.99,b:0,c:0.0047,d:1.0718, f0:1e6,f1:100e9, hrms:0.1e-3,
+    kaynak:"ITU‑R P.2040‑3, Tablo 3", itu:true,
+    kMin:5,kMax:150,kVar:40, tipik:"İç kapı 35–45 mm, dış kapı 55–70 mm, kaplama 15–20 mm.",
+    gorunur:"Opak. Lignin soğurur, hücre duvarları saçar. Nem oranı RF kaybını birkaç kat değiştirir." },
+  cam:{ ad:"Cam", tam:"Düz cam (soda‑kireç)", renk:"#9CC0BE", desen:"cam",
+    a:6.31,b:0,c:0.0036,d:1.3394, f0:100e6,f1:1e15, hrms:0.5e-6,
+    kaynak:"İki parçalı tam tayf modeli", itu:false, tamTayf:true,
+    kMin:2,kMax:40,kVar:4, tipik:"Pencere 4–6 mm, ısıcam iki kat 4 mm, vitrin 10–12 mm.",
+    gorunur:"Saydam. n ≈ 1,52, yüzey başına ~%4 yansır, 4 mm cam görünür ışığın ~%90’ını geçirir." },
+  pvc:{ ad:"PVC", tam:"Sert beyaz PVC (PVC‑U)", renk:"#E4E2DC", desen:"duz",
+    a:2.90,b:0,c:0.00194,d:1.0, f0:1e6,f1:100e9, hrms:5e-6,
+    kaynak:"El kitabı değeri — ITU tablosunda yok", itu:false,
+    kMin:2,kMax:60,kVar:10, tipik:"Pencere profili cidarı 2,5–3 mm, boru 3–10 mm, levha 5–20 mm.",
+    gorunur:"Beyaz PVC opaktır ve model de opak veriyor, ama sebebi farklı: gerçekte ışığı soğuran değil, TiO₂ pigment taneleri saçar. Şeffaf PVC saydamdır (n ≈ 1,54, ~%85 geçirir) — bu model onu temsil etmiyor.",
+    yanlisGorunur:true }
+};
+let MAL = "beton";
+const m0 = ()=>MALZEMELER[MAL];
+let KALINLIK = MALZEMELER.beton.kVar/1000;    // metre
+
+const SAHNE={x0:0,x1:6.0,orta:3.0,tx:0.35,rx:5.65};
+const on   = ()=>SAHNE.orta - KALINLIK/2;
+const arka = ()=>SAHNE.orta + KALINLIK/2;
+
+/* ── camın tüm tayf modeli ──
+   ε′ : Lorentz salınıcı toplamı. UV elektronik geçiş camın görünür bölgedeki n = 1,52’sini,
+        Si–O fonon kipleri de mikrodalgadaki ε′r = 6,31’e çıkışı verir; ikisinin farkı
+        doğrudan fononların katkısıdır.
+   α  : 100 GHz altında ITU iletkenliğinden, üstünde ölçüm çapaları arasında log–log ara değer.
+        Tek bir güç yasası camın saydamlık penceresini temsil edemediği için ayrı tutuldu.      */
+const CAM_OSC=[
+  {S:1.28, f:2.94e15, g:2.0e14},   // UV elektronik geçiş — Sellmeier kutbu, 102 nm
+  {S:1.55, f:3.25e13, g:8.0e12},   // Si–O asimetrik gerilme, ~9,2 µm
+  {S:0.38, f:2.30e13, g:6.0e12},   // Si–O–Si, ~13 µm
+  {S:1.60, f:1.38e13, g:5.0e12},   // O–Si–O bükülme, ~21,7 µm
+  {S:0.50, f:6.00e12, g:5.0e12}    // ağ kipleri + Na⁺
+];
+const CAM_ALFA=[                   // [Hz, α (1/m)] — 100 GHz üstü ölçüm çapaları
+  [1e11,2.6e2],[3e11,1.0e3],[1e12,5.0e3],[3e12,2.0e4],[1e13,3.0e5],
+  [3e13,2.0e6],[6e13,1.0e5],[7.5e13,1.0e4],[1.2e14,1.5e2],[2e14,3.0e1],
+  [3e14,2.5e1],[4.3e14,1.5e1],[5.45e14,1.0e1],[6.5e14,1.5e1],[7.5e14,3.0e1],
+  [8.6e14,5.0e2],[9.4e14,5.0e3],[1e15,3.0e4],[3e15,1.0e6]
+];
+function logAra(tab,x){
+  if(x<=tab[0][0])return tab[0][1];
+  const son=tab.length-1;
+  if(x>=tab[son][0])return tab[son][1];
+  for(let i=1;i<tab.length;i++) if(x<=tab[i][0]){
+    const t=(Math.log10(x)-Math.log10(tab[i-1][0]))/(Math.log10(tab[i][0])-Math.log10(tab[i-1][0]));
+    return Math.pow(10, Math.log10(tab[i-1][1])+t*(Math.log10(tab[i][1])-Math.log10(tab[i-1][1])));
+  }
+  return tab[son][1];
+}
+function camN(f){
+  let er=1;
+  for(const o of CAM_OSC){
+    const d=o.f*o.f-f*f;
+    er += o.S*o.f*o.f*d/(d*d+(o.g*f)*(o.g*f));
+  }
+  er=Math.max(1.02,Math.min(12,er));   // Reststrahlen bandındaki ε′<0 bölgesi modellenmiyor
+  if(f<=1e11){
+    const sg=0.0036*Math.pow(f/1e9,1.3394);
+    return kkok(K(er,-sg/(2*Math.PI*f*EPS0)));
+  }
+  return K(Math.sqrt(er), -logAra(CAM_ALFA,f)*C0/(4*Math.PI*f));
+}
+
+/* ── fizik ── */
+function malzeme(f){
+  const M=m0();
+  if(M.tamTayf){
+    const n=camN(f), ec=km(n,n);
+    return {er:ec.re, sg:-ec.im*2*Math.PI*f*EPS0, n, np:n.re, kap:-n.im};
+  }
+  const fG=f/1e9;
+  const er=M.a*Math.pow(fG,M.b);
+  const sg=M.c*Math.pow(fG,M.d);
+  const n=kkok(K(er,-sg/(2*Math.PI*f*EPS0)));
+  return {er,sg,n,np:n.re,kap:-n.im};
+}
+let GELIS_ACISI_DEG = 0;
+let POLARIZASYON = "TE";
+
+function katmanHam(f, d){
+  const M=m0(), mm=malzeme(f), k0=2*Math.PI*f/C0, n=mm.n;
+  const th = GELIS_ACISI_DEG * Math.PI / 180;
+  const cosTh = Math.cos(th), sinTh = Math.sin(th);
+  const sin2 = sinTh * sinTh;
+  
+  // Karmaşık geçirgenlik ec = n^2
+  const ec = km(n, n);
+  // q = sqrt(ec - sin^2(th))
+  const q = kkok(kc(ec, K(sin2, 0)));
+  
+  // Tek sınır Fresnel yansıma katsayısı
+  let rho;
+  if(POLARIZASYON === "TM"){
+    // TM (p-polarizasyon): (ec * cos(th) - q) / (ec * cos(th) + q)
+    const ecCos = km(ec, K(cosTh, 0));
+    rho = kb(kc(ecCos, q), ka(ecCos, q));
+  } else {
+    // TE (s-polarizasyon): (cos(th) - q) / (cos(th) + q)
+    const cK = K(cosTh, 0);
+    rho = kb(kc(cK, q), ka(cK, q));
+  }
+  
+  // Levha içinde dik yöndeki faz/sönüm ilerlemesi: beta_x = k0 * d * q
+  const beta = K(k0 * d * q.re, k0 * d * q.im);
+  const e1 = kus(K(beta.im, -beta.re));
+  const e2 = kus(K(2 * beta.im, -2 * beta.re));
+  
+  const rho2 = km(rho, rho);
+  const one = K(1, 0);
+  const payda = kc(one, km(rho2, e2));
+  
+  const G = kb(km(rho, kc(one, e2)), payda);
+  const T = kb(km(kc(one, rho2), e1), payda);
+  const A = kb(ka(one, rho), payda);
+  
+  const Rp = Math.min(1, Math.max(0, kmag(G)**2));
+  const Tp = Math.min(1, Math.max(0, kmag(T)**2));
+  const lam = C0 / f, alfa = 2 * k0 * mm.kap;
+  const rs = Math.exp(-8 * Math.pow(Math.PI * M.hrms * cosTh / lam, 2));
+  
+  return {f,lam,k0,d,...mm,A,G,T,rho,Rp,Tp,Ab:Math.max(0,1-Rp-Tp),
+          alfa,nufuz:1/alfa,ayna:rs*rs,ortalandi:false,q,th,cosTh,sinTh};
+}
+
+/* Levha içindeki çoklu yansımalar Fabry–Pérot saçakları üretir. Saçak aralığı
+   c/(2n′d) kaynağın bant genişliğinden küçük kaldığında hiçbir gerçek ölçüm bu
+   saçakları çözemez; o durumda gücü %0,2’lik bir bant üzerinde ortalıyoruz.
+   4 mm camda görünür bölgede saçak aralığı 25 GHz — ortalama şart.            */
+const BANT = 0.002;
+function katman(f, kal){
+  const d = kal===undefined ? KALINLIK : kal;
+  const s = katmanHam(f,d);
+  const fsr = C0/(2*s.np*d);
+  if(fsr < BANT*f){
+    const N=41; let sT=0,sR=0;
+    for(let i=0;i<N;i++){
+      const q=katmanHam(f*(1+BANT*(2*i/(N-1)-1)),d);
+      sT+=q.Tp; sR+=q.Rp;
+    }
+    sT/=N; sR/=N;
+    const cT = s.Tp>0?Math.sqrt(sT/s.Tp):0, cR = s.Rp>0?Math.sqrt(sR/s.Rp):0;
+    s.T=K(s.T.re*cT,s.T.im*cT); s.G=K(s.G.re*cR,s.G.im*cR);
+    s.Tp=sT; s.Rp=sR; s.Ab=Math.max(0,1-sT-sR); s.ortalandi=true;
+  }
+  return s;
+}
+function alan(s,x){
+  const {k0,A,G,T,rho,d,q,cosTh}=s, ON=on(), ARKA=arka();
+  const k0x = k0 * (cosTh || 1);
+  if(x<ON){ const u=x-ON; return ka(kus(K(0,-k0x*u)), km(G,kus(K(0,k0x*u)))); }
+  if(x<=ARKA){
+    const u=x-ON, w=2*d-u;
+    const qIm = q ? q.im : -s.kap, qRe = q ? q.re : s.np;
+    return ka(km(A,kus(K(k0*qIm*u,-k0*qRe*u))),
+              km(km(A,rho), kus(K(k0*qIm*w,-k0*qRe*w))));
+  }
+  const u=x-ARKA; return km(T,kus(K(0,-k0x*u)));
+}
+function zarfHiLo(s,x){
+  const {k0,G,T,A,rho,d,q}=s, ON=on(), ARKA=arka();
+  if(x<ON){ const g=kmag(G); return [1+g,Math.abs(1-g)]; }
+  if(x<=ARKA){
+    const u=x-ON, kap = q ? -q.im : -s.kap, a=kmag(A);
+    const i1=a*Math.exp(-k0*kap*u), i2=a*kmag(rho)*Math.exp(-k0*kap*(2*d-u));
+    return [i1+i2, Math.abs(i1-i2)];
+  }
+  const t=kmag(T); return [t,t];
+}
+
+/* ── bantlar, hazır frekanslar, renk ── */
+const BANTLAR=[{f0:1e6,f1:3e7,ad:"Kısa dalga"},{f0:3e7,f1:3e8,ad:"VHF · FM radyo"},
+ {f0:3e8,f1:3e9,ad:"UHF · GSM, Wi‑Fi"},{f0:3e9,f1:3e10,ad:"SHF · 5G, radar"},
+ {f0:3e10,f1:3e11,ad:"Milimetre dalga"},{f0:3e11,f1:1e13,ad:"Terahertz"},
+ {f0:1e13,f1:3.84e14,ad:"Kızılötesi"},{f0:3.84e14,f1:7.89e14,ad:"Görünür ışık"},
+ {f0:7.89e14,f1:1e16,ad:"Morötesi"}];
+const bantAdi=f=>(BANTLAR.find(b=>f>=b.f0&&f<b.f1)||BANTLAR[8]).ad;
+const HAZIRLAR=[{ad:"FM 100 MHz",f:100e6},{ad:"GSM 900 MHz",f:900e6},{ad:"Wi‑Fi 2,4 GHz",f:2.4e9},
+ {ad:"5G 3,5 GHz",f:3.5e9},{ad:"5G mmWave 28 GHz",f:28e9},{ad:"WiGig 60 GHz",f:60e9},
+ {ad:"1 THz",f:1e12},{ad:"Kızılötesi 30 THz",f:3e13},{ad:"Yeşil ışık 545 THz",f:5.45e14}];
+
+function gorunurRenk(l){
+  let r=0,g=0,b=0;
+  if(l>=380&&l<440){r=-(l-440)/60;b=1;} else if(l<490){g=(l-440)/50;b=1;}
+  else if(l<510){g=1;b=-(l-510)/20;} else if(l<580){r=(l-510)/70;g=1;}
+  else if(l<645){r=1;g=-(l-645)/65;} else if(l<=780){r=1;}
+  let s=1; if(l>700)s=0.3+0.7*(780-l)/80; else if(l<420)s=0.3+0.7*(l-380)/40;
+  const q=v=>Math.round(255*Math.pow(Math.max(0,Math.min(1,v*s)),0.8));
+  return [q(r),q(g),q(b)];
+}
+function isaretRengi(f){
+  const gr=[46,52,58], kk=[122,42,32], mg=[124,116,150];
+  const kar=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+  if(f<1e13) return gr;
+  if(f<3.84e14) return kar(gr,kk,(Math.log10(f)-13)/(Math.log10(3.84e14)-13));
+  if(f<=7.89e14) return gorunurRenk(C0/f*1e9);
+  return kar([110,60,190],mg,Math.min(1,(Math.log10(f)-Math.log10(7.89e14))/0.6));
+}
+const rgb=c=>`rgb(${c[0]},${c[1]},${c[2]})`;
+const rgba=(c,a)=>`rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+/* ── biçim ── */
+function frekansYaz(f){
+  if(f>=1e12)return[(f/1e12).toPrecision(4),"THz"];
+  if(f>=1e9) return[(f/1e9).toPrecision(4),"GHz"];
+  if(f>=1e6) return[(f/1e6).toPrecision(4),"MHz"];
+  return[(f/1e3).toPrecision(4),"kHz"];
+}
+function uzunlukYaz(m){
+  if(m>=1000)return(m/1000).toPrecision(3)+" km";
+  if(m>=1)return m.toPrecision(3)+" m";
+  if(m>=1e-3)return(m*1e3).toPrecision(3)+" mm";
+  if(m>=1e-6)return(m*1e6).toPrecision(3)+" µm";
+  return(m*1e9).toPrecision(3)+" nm";
+}
+function kalinlikYaz(mm){ return mm>=1000 ? (mm/10).toFixed(0)+" cm" : mm+" mm"; }
+const dbYaz=p=>p<=1e-300?"< −3000 dB":(10*Math.log10(p)).toFixed(1).replace("-","−")+" dB";
+function oranYaz(p){
+  if(p>=0.001)return(p*100).toFixed(2)+" %";
+  if(p<=1e-300)return"≈ 0";
+  return p.toExponential(2).replace("e","·10^").replace("-","−");
+}
+
+/* ── durum ── */
+let f=2.4e9, s=katman(f);
+const azalt=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $=id=>document.getElementById(id);
+const fSlider=$("fSlider"), kSlider=$("kSlider");
+
+/* ── malzeme seçimi (combobox) ── */
+const malzemeSelect=$("malzemeSelect");
+Object.entries(MALZEMELER).forEach(([id,M])=>{
+  const opt=document.createElement("option");
+  opt.value=id;
+  opt.textContent=M.tam||M.ad;
+  malzemeSelect.appendChild(opt);
+});
+malzemeSelect.addEventListener("change",()=>malzemeSec(malzemeSelect.value));
+
+function malzemeSec(id){
+  MAL=id; const M=m0();
+  kSlider.min=M.kMin; kSlider.max=M.kMax;
+  kSlider.step = M.kMax>200 ? 5 : (M.kMax>60 ? 1 : 0.5);
+  kSlider.value=M.kVar;
+  KALINLIK=M.kVar/1000;
+  malzemeSelect.value=id;
+  $("tipikNot").textContent="Tipik kullanım: "+M.tipik;
+  tumunuGuncelle();
+}
+kSlider.addEventListener("input",()=>{ KALINLIK=(+kSlider.value)/1000; tumunuGuncelle(); });
+
+function tumunuGuncelle(){
+  s=katman(f);
+  $("kDeger").textContent=kalinlikYaz(+kSlider.value);
+  tayfHesapla(); okuGuncelle(); kunyeGuncelle(); cetvelCiz(); tayfCiz(); hazirGuncelle();
+}
+function frekansAyarla(yeni,kaydir=true){
+  f=Math.max(1e6,Math.min(1e16,yeni)); s=katman(f);
+  if(kaydir)fSlider.value=Math.log10(f);
+  okuGuncelle(); cetvelCiz(); tayfCiz(); hazirGuncelle();
+}
+fSlider.addEventListener("input",()=>frekansAyarla(Math.pow(10,+fSlider.value),false));
+
+const hazirSelect=$("hazirSelect");
+HAZIRLAR.forEach(h=>{
+  const opt=document.createElement("option");
+  opt.value=h.f; opt.textContent=h.ad;
+  hazirSelect.appendChild(opt);
+});
+hazirSelect.addEventListener("change",()=>{
+  if(hazirSelect.value!=="custom") frekansAyarla(+hazirSelect.value);
+});
+const hazirGuncelle=()=>{
+  const match=HAZIRLAR.find(h=>Math.abs(Math.log10(+h.f/f))<0.004);
+  hazirSelect.value=match?String(match.f):"custom";
+};
+
+/* ── manuel frekans girişi ── */
+const btnFrekansDuzenle=$("btnFrekansDuzenle");
+const frekansGirisPanel=$("frekansGirisPanel");
+const manuelFrekansInput=$("manuelFrekansInput");
+const manuelBirimSelect=$("manuelBirimSelect");
+const btnFrekansUygula=$("btnFrekansUygula");
+const btnFrekansIptal=$("btnFrekansIptal");
+const frekansHataNot=$("frekansHataNot");
+
+function panelFrekansDoldur(){
+  const birim=+manuelBirimSelect.value;
+  const deger=f/birim;
+  manuelFrekansInput.value=Number(deger.toFixed(6));
+  frekansHataNot.hidden=true;
+}
+
+function panelAcKapat(ac){
+  const yeniDurum = ac !== undefined ? ac : frekansGirisPanel.hidden;
+  if(yeniDurum){
+    if(f>=1e12) manuelBirimSelect.value="1e12";
+    else if(f>=1e9) manuelBirimSelect.value="1e9";
+    else if(f>=1e6) manuelBirimSelect.value="1e6";
+    else if(f>=1e3) manuelBirimSelect.value="1e3";
+    else manuelBirimSelect.value="1";
+
+    panelFrekansDoldur();
+    frekansGirisPanel.hidden=false;
+    manuelFrekansInput.focus();
+    manuelFrekansInput.select();
+  } else {
+    frekansGirisPanel.hidden=true;
+  }
+}
+
+btnFrekansDuzenle.addEventListener("click",()=>panelAcKapat());
+$("fDeger").addEventListener("click",()=>panelAcKapat(true));
+
+manuelBirimSelect.addEventListener("change",()=>{
+  const val=parseFloat(manuelFrekansInput.value);
+  if(!isNaN(val) && val>0) panelFrekansDoldur();
+});
+
+function manuelFrekansOnayla(){
+  const val=parseFloat(manuelFrekansInput.value);
+  const birim=+manuelBirimSelect.value;
+  if(isNaN(val) || val<=0){
+    frekansHataNot.hidden=false;
+    return;
+  }
+  const hedefHz=val*birim;
+  if(hedefHz<1e6 || hedefHz>1e15){
+    frekansHataNot.hidden=false;
+    return;
+  }
+  frekansHataNot.hidden=true;
+  frekansAyarla(hedefHz,true);
+  frekansGirisPanel.hidden=true;
+}
+
+btnFrekansUygula.addEventListener("click",manuelFrekansOnayla);
+btnFrekansIptal.addEventListener("click",()=>{frekansGirisPanel.hidden=true;});
+manuelFrekansInput.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    manuelFrekansOnayla();
+  } else if(e.key==="Escape"){
+    frekansGirisPanel.hidden=true;
+  }
+});
+
+/* ── geliş açısı ve polarizasyon ── */
+const aciSlider=$("aciSlider");
+const aciDeger=$("aciDeger");
+
+aciSlider.addEventListener("input",()=>{
+  GELIS_ACISI_DEG=+aciSlider.value;
+  aciDeger.textContent=GELIS_ACISI_DEG===0?"0° (Dik)":GELIS_ACISI_DEG+"°";
+  tumunuGuncelle();
+});
+
+document.querySelectorAll('input[name="pol"]').forEach(r=>{
+  r.addEventListener("change",()=>{
+    POLARIZASYON=r.value;
+    tumunuGuncelle();
+  });
+});
+
+/* ── kaynak gücü seçimi ── */
+let PTX_DBM=20;
+const gucSelect=$("gucSelect");
+const gucGosterge=$("gucGosterge");
+const gucGirisPanel=$("gucGirisPanel");
+const manuelGucInput=$("manuelGucInput");
+const manuelGucBirimSelect=$("manuelGucBirimSelect");
+const btnGucUygula=$("btnGucUygula");
+const btnGucIptal=$("btnGucIptal");
+
+function gucAyarla(dbm,updateSelect=true){
+  PTX_DBM=dbm;
+  const isaret=dbm>0?"+":"";
+  gucGosterge.textContent=`${isaret}${dbm.toFixed(1)} dBm`;
+  if(updateSelect){
+    const match=Array.from(gucSelect.options).find(o=>o.value!=="custom" && Math.abs(+o.value-dbm)<0.05);
+    gucSelect.value=match?match.value:"custom";
+  }
+  okuGuncelle();
+}
+
+gucSelect.addEventListener("change",()=>{
+  if(gucSelect.value==="custom"){
+    gucGirisPanel.hidden=false;
+    manuelGucInput.value=PTX_DBM;
+    manuelGucBirimSelect.value="dbm";
+    manuelGucInput.focus();
+    manuelGucInput.select();
+  } else {
+    gucGirisPanel.hidden=true;
+    gucAyarla(+gucSelect.value,false);
+  }
+});
+
+btnGucUygula.addEventListener("click",()=>{
+  const val=parseFloat(manuelGucInput.value);
+  const birim=manuelGucBirimSelect.value;
+  if(isNaN(val)) return;
+  let dbm=val;
+  if(birim==="mw"){
+    if(val<=0) return;
+    dbm=10*Math.log10(val);
+  } else if(birim==="w"){
+    if(val<=0) return;
+    dbm=10*Math.log10(val*1000);
+  }
+  gucAyarla(dbm,true);
+  gucGirisPanel.hidden=true;
+});
+
+btnGucIptal.addEventListener("click",()=>{
+  gucGirisPanel.hidden=true;
+  const match=Array.from(gucSelect.options).find(o=>o.value!=="custom" && Math.abs(+o.value-PTX_DBM)<0.05);
+  gucSelect.value=match?match.value:"custom";
+});
+
+/* ── okumalar ── */
+function okuGuncelle(){
+  const [v,u]=frekansYaz(f);
+  $("fDeger").innerHTML=v+"<small>"+u+"</small>";
+  $("bantAdi").textContent=bantAdi(f);
+  $("bantAdi").style.borderColor=rgba(isaretRengi(f),.75);
+  $("lamDeger").textContent="λ₀ = "+uzunlukYaz(s.lam);
+
+  const yan=s.Rp*100, yut=s.Ab*100, gec=s.Tp*100;
+  $("cYan").style.width=yan+"%"; $("cYut").style.width=yut+"%"; $("cGec").style.width=gec+"%";
+  $("cYan").textContent=yan>=6?yan.toFixed(0)+"%":"";
+  $("cYut").textContent=yut>=6?yut.toFixed(0)+"%":"";
+  $("cGec").textContent=gec>=6?gec.toFixed(0)+"%":"";
+  $("enerjiCubuk").setAttribute("aria-label",
+    `Yansıyan %${yan.toFixed(1)}, yutulan %${yut.toFixed(1)}, geçen %${gec.toFixed(1)}`);
+
+  $("oT").textContent=oranYaz(s.Tp);
+  $("oTdB").textContent=dbYaz(s.Tp);
+  $("oR").textContent=oranYaz(s.Rp);
+  $("oSpec").textContent=(s.ayna*100).toFixed(s.ayna<0.01?3:1)+" % aynasal, "+((1-s.ayna)*100).toFixed(1)+" % dağınık";
+  $("oPen").textContent=uzunlukYaz(s.nufuz);
+  $("oN").textContent=s.np.toFixed(3)+" − j"+s.kap.toExponential(2);
+  $("oSig").textContent=s.sg.toPrecision(3)+" S/m";
+
+  const mesafe=5.30; // kaynak (0.35m) ile alıcı (5.65m) arası 5.30 m
+  const dokumPtx=$("dokumPtx"), dokumFspl=$("dokumFspl"), dokumDuvar=$("dokumDuvar"), dokumPrx=$("dokumPrx");
+  const rozet=$("sinyalRozet"), dolgu=$("sinyalMetreDolgu");
+  
+  if(dokumPtx) dokumPtx.textContent=(PTX_DBM>=0?"+":"")+PTX_DBM.toFixed(1)+" dBm";
+  if(dokumDuvar) dokumDuvar.textContent=dbYaz(s.Tp);
+
+  if(f<=3e11){
+    const fspl=20*Math.log10(4*Math.PI*mesafe/s.lam);
+    $("oFspl").textContent="−"+fspl.toFixed(1)+" dB";
+    if(dokumFspl) dokumFspl.textContent="−"+fspl.toFixed(1)+" dB";
+    $("hLink").innerHTML=`Alıcıda güç (P<sub>rx</sub>, ${mesafe.toFixed(1)} m, izotropik)`;
+    const prx_dbm=PTX_DBM - fspl + 10*Math.log10(Math.max(s.Tp,1e-300));
+    if(dokumPrx) dokumPrx.textContent=(prx_dbm<-300?"< −300":prx_dbm.toFixed(1))+" dBm";
+
+    if(prx_dbm<-300){
+      $("oLink").textContent="< −300 dBm (algılanamaz)";
+      if(rozet){
+        rozet.className="sinyal-rozet rozet-kopuk";
+        rozet.textContent="🔴 Sinyal Yok (< −300 dBm)";
+      }
+      if(dolgu){ dolgu.style.width="4%"; dolgu.style.backgroundColor="#8A2016"; }
+    } else {
+      const prx_mw=Math.pow(10,prx_dbm/10);
+      let prx_birim="";
+      if(prx_mw>=1) prx_birim=prx_mw.toPrecision(3)+" mW";
+      else if(prx_mw>=1e-3) prx_birim=(prx_mw*1e3).toPrecision(3)+" µW";
+      else if(prx_mw>=1e-6) prx_birim=(prx_mw*1e6).toPrecision(3)+" nW";
+      else if(prx_mw>=1e-9) prx_birim=(prx_mw*1e9).toPrecision(3)+" pW";
+      else if(prx_mw>=1e-12) prx_birim=(prx_mw*1e12).toPrecision(3)+" fW";
+      else prx_birim=(prx_mw*1e15).toPrecision(3)+" aW";
+      $("oLink").textContent=`${prx_dbm.toFixed(1).replace("-","−")} dBm (${prx_birim})`;
+      
+      if(rozet && dolgu){
+        if(prx_dbm>=-50){
+          rozet.className="sinyal-rozet rozet-mukemmel";
+          rozet.textContent=`🟢 Mükemmel (${prx_dbm.toFixed(1)} dBm)`;
+          dolgu.style.width="95%"; dolgu.style.backgroundColor="#2B6E3F";
+        } else if(prx_dbm>=-65){
+          rozet.className="sinyal-rozet rozet-iyi";
+          rozet.textContent=`🟢 İyi (${prx_dbm.toFixed(1)} dBm)`;
+          dolgu.style.width="75%"; dolgu.style.backgroundColor="#1E5E4E";
+        } else if(prx_dbm>=-75){
+          rozet.className="sinyal-rozet rozet-orta";
+          rozet.textContent=`🟡 Orta (${prx_dbm.toFixed(1)} dBm)`;
+          dolgu.style.width="50%"; dolgu.style.backgroundColor="#8A6A12";
+        } else if(prx_dbm>=-85){
+          rozet.className="sinyal-rozet rozet-zayif";
+          rozet.textContent=`🟠 Zayıf (${prx_dbm.toFixed(1)} dBm)`;
+          dolgu.style.width="25%"; dolgu.style.backgroundColor="#A85507";
+        } else {
+          rozet.className="sinyal-rozet rozet-kopuk";
+          rozet.textContent=`🔴 Sinyal Yok (${prx_dbm.toFixed(1)} dBm)`;
+          dolgu.style.width="8%"; dolgu.style.backgroundColor="#8A2016";
+        }
+      }
+    }
+  } else {
+    $("oFspl").textContent="Işın optiği (FSPL tanımsız)";
+    if(dokumFspl) dokumFspl.textContent="—";
+    $("hLink").innerHTML=`Alıcıda güç (P<sub>rx</sub>)`;
+    $("oLink").textContent="Işın geometrisi modeli gerekir";
+    if(dokumPrx) dokumPrx.textContent="Işın optiği";
+    if(rozet && dolgu){
+      rozet.className="sinyal-rozet rozet-orta";
+      rozet.textContent="Işın Yayılımı";
+      dolgu.style.width="50%"; dolgu.style.backgroundColor="#8A6A12";
+    }
+  }
+
+  const M=m0(), kutu=$("uyariKutu");
+  const disarda = f<M.f0 || f>M.f1;
+  if(M.yanlisGorunur && f>=3.84e14 && f<=7.89e14){
+    kutu.hidden=false;
+    kutu.innerHTML="<b>Model burada gerçeği vermiyor.</b> "+M.gorunur+
+      " Yukarıdaki sayılar ITU güç yasasının optik bölgeye dışa vurumudur; ölçüm değeri taşımaz.";
+  } else if(disarda){
+    kutu.hidden=false;
+    const [a1,u1]=frekansYaz(M.f0), [a2,u2]=frekansYaz(M.f1);
+    kutu.innerHTML=`<b>Ölçüm aralığının dışındasınız.</b> ${M.tam} için model ${a1} ${u1} – ${a2} ${u2}
+      arasındaki ölçümlere dayanıyor; bu frekansta değerler dışa vurumdur.`;
+  } else kutu.hidden=true;
+}
+
+function kunyeGuncelle(){
+  const M=m0();
+  const hucre=(b,x,y)=>`<div class="ozellik"><b>${b}</b><span${/[εσμhθ]|=/.test(x)?' class="mono"':''}>${x}</span>${y?`<span class="ikincil">${y}</span>`:""}</div>`;
+  const [a1,u1]=frekansYaz(M.f0), [a2,u2]=frekansYaz(M.f1);
+  const brewster=(Math.atan(Math.sqrt(M.a||5.24))*180/Math.PI).toFixed(1);
+  $("kunyeGr").innerHTML=
+    hucre("Malzeme",M.tam,M.kaynak)+
+    hucre("Kalınlık","d = "+kalinlikYaz(+kSlider.value),"")+
+    (M.tamTayf
+      ? hucre("Bağıl geçirgenlik","ε′r = "+s.er.toFixed(2).replace(".",","),"bu frekansta; RF’de 6,31 → görünürde 2,32")+
+        hucre("Dispersiyon modeli","Lorentz salınıcıları","1 UV elektronik + 4 Si–O fonon kipi")
+      : hucre("Bağıl geçirgenlik","ε′r = "+M.a.toFixed(2).replace(".",","), M.b===0?"frekanstan bağımsız":"")+
+        hucre("İletkenlik","σ = "+M.c+" · f^"+M.d,"f, GHz cinsinden"))+
+    hucre("Yüzey pürüzlülüğü","h_rms = "+uzunlukYaz(M.hrms),"")+
+    hucre("Model geçerlilik aralığı",a1+" "+u1+" – "+a2+" "+u2,"")+
+    hucre("Bağıl manyetik geçirgenlik","μr = 1","")+
+    hucre("Geometri & Polarizasyon",`θ = ${GELIS_ACISI_DEG}° (${POLARIZASYON})`,`Brewster açısı θ_B ≈ ${brewster}° (TM yansımasızlık)`);
+  $("gecerlilikNot").innerHTML = M.tamTayf
+    ? `<b>Camın modeli neden farklı.</b> Cam, tek bir güç yasasının işe yaramadığı tek malzeme: mikrodalgada
+       ε′r = 6,31 iken görünür bölgede 2,32’dir, üstelik arada tamamen opak bir kızılötesi bölge vardır. Bu yüzden
+       cam için ε′ bir Lorentz salınıcı toplamından hesaplanıyor — bir morötesi elektronik geçiş, dört Si–O fonon
+       kipi. Fononların katkısı tam olarak 6,31 ile 2,32 arasındaki farktır; camın RF’de ağır, ışıkta hafif
+       görünmesinin sebebi budur. Soğurma ise 100 GHz altında ITU iletkenliğinden, üstünde ölçüm çapaları arasında
+       ara değerle alınıyor: 1 THz’de α ≈ 50 cm⁻¹, 10 µm’de Reststrahlen tepesi, 550 nm’de α ≈ 10 m⁻¹.
+       <span class="gecerli">100 GHz – 1 THz</span> arası iki veri kümesi arasındaki köprüdür, en zayıf halka orasıdır.`
+    : M.itu
+    ? `<b>Geçerlilik.</b> ${M.tam} için ε′r ve σ doğrudan ITU‑R P.2040‑3 Tablo 3’ten alınıyor; tablo bu malzemede
+       <span class="gecerli">${a1} ${u1} – ${a2} ${u2}</span> aralığındaki ölçümlere dayanıyor. Bu aralığın dışında
+       aynı güç yasası dışa vuruluyor ve grafikte kesik çizgiyle gösteriliyor.`
+    : `<b>Geçerlilik.</b> PVC, ITU‑R P.2040‑3 tablosunda yok. Burada sert PVC‑U için yaygın el kitabı değerleri
+       kullanılıyor: ε′r ≈ 2,9 ve kayıp tanjantı ≈ 0,012 kabaca frekanstan bağımsız alınıp
+       σ = ωε₀ε′r·tanδ ile ITU biçimine çevrildi (σ ∝ f¹). Yumuşatıcı katkılı PVC’de kayıp birkaç kat daha yüksektir.`;
+}
+
+/* ── cetvel ── */
+const cetvel=$("cetvel"), cctx=cetvel.getContext("2d");
+const CET_TIK=[{f:1e6,e:"1M"},{f:1e8,e:"100M"},{f:1e9,e:"1G"},{f:1e10,e:"10G"},
+ {f:1e11,e:"100G"},{f:1e12,e:"1T"},{f:1e14,e:"100T"},{f:1e15,e:"1P"}];
+function cetvelCiz(){
+  const W=cetvel.width,H=cetvel.height,L=6,R=15, px=x=>(Math.log10(x)-L)/(R-L)*W;
+  cctx.clearRect(0,0,W,H);
+  BANTLAR.forEach((b,i)=>{
+    const x0=Math.max(0,px(b.f0)),x1=Math.min(W,px(b.f1)); if(x1<=x0)return;
+    if(b.ad==="Görünür ışık"){
+      const g=cctx.createLinearGradient(x0,0,x1,0);
+      for(let k=0;k<=10;k++){const ff=Math.pow(10,Math.log10(b.f0)+(Math.log10(b.f1)-Math.log10(b.f0))*k/10);
+        g.addColorStop(k/10,rgb(gorunurRenk(C0/ff*1e9)));}
+      cctx.fillStyle=g;
+    } else cctx.fillStyle=i%2?"rgba(22,24,27,.09)":"rgba(22,24,27,.05)";
+    cctx.fillRect(x0,0,x1-x0,22);
+  });
+  cctx.strokeStyle="rgba(22,24,27,.30)"; cctx.lineWidth=1;
+  cctx.fillStyle="#5B5F63"; cctx.font="17px 'IBM Plex Mono', monospace"; cctx.textAlign="center";
+  CET_TIK.forEach(t=>{const x=Math.round(px(t.f))+.5;
+    cctx.beginPath();cctx.moveTo(x,22);cctx.lineTo(x,32);cctx.stroke();
+    cctx.fillText(t.e,Math.max(22,Math.min(W-22,x)),50);});
+  cctx.font="16px Archivo, sans-serif";
+  [["Radyo",px(1e6),px(3e9)],["mm",px(3e10),px(3e11)],["THz",px(3e11),px(1e13)],
+   ["Kızılötesi",px(1e13),px(3.84e14)],["Işık",px(3.84e14),px(7.89e14)]].forEach(([a,p,q])=>{
+    if(q-p>22)cctx.fillText(a,(p+q)/2,72);});
+  const x=Math.round(px(f))+.5;
+  cctx.strokeStyle=rgb(isaretRengi(f)); cctx.lineWidth=3;
+  cctx.beginPath();cctx.moveTo(x,0);cctx.lineTo(x,32);cctx.stroke();
+}
+
+function cetvelFrekansAyarla(e){
+  const rect=cetvel.getBoundingClientRect();
+  const frac=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+  frekansAyarla(Math.pow(10,6+frac*9));
+}
+let cetvelSurukleniyor=false;
+cetvel.addEventListener("pointerdown",e=>{
+  cetvelSurukleniyor=true;
+  cetvel.setPointerCapture(e.pointerId);
+  cetvelFrekansAyarla(e);
+});
+cetvel.addEventListener("pointermove",e=>{if(cetvelSurukleniyor)cetvelFrekansAyarla(e);});
+cetvel.addEventListener("pointerup",e=>{cetvelSurukleniyor=false;});
+cetvel.addEventListener("pointercancel",e=>{cetvelSurukleniyor=false;});
+
+/* ── tayf ── */
+const tayf=$("tayf"), tctx=tayf.getContext("2d");
+const tayfModal=$("tayfModal"), mctx=tayfModal.getContext("2d");
+const tayfDialog=$("tayfDialog");
+let TAYF=null, modalAcik=false;
+
+function tayfHesapla(){
+  const N=760,v=[];
+  for(let i=0;i<N;i++){
+    const lf=6+9*i/(N-1), ff=Math.pow(10,lf), k=katman(ff);
+    v.push({lf,T:10*Math.log10(Math.max(k.Tp,1e-300)),R:10*Math.log10(Math.max(k.Rp,1e-300))});
+  }
+  TAYF=v;
+}
+function esikBul(h){
+  let son=null,onc=TAYF[0].T;
+  for(let i=1;i<TAYF.length;i++){const t=TAYF[i].T; if(onc>h&&t<=h)son=Math.pow(10,TAYF[i].lf); onc=t;}
+  return son;
+}
+
+function renderTayfCanvas(c, ctx, isModal=false){
+  const W=c.width,H=c.height;
+  const m = isModal ? {l:64,r:24,t:24,b:40} : {l:38,r:12,t:12,b:24};
+  const gw=W-m.l-m.r, gh=H-m.t-m.b, L=6,R=15,YMIN=-120,YMAX=2;
+  const px=lf=>m.l+(lf-L)/(R-L)*gw;
+  const py=db=>m.t+(YMAX-Math.max(YMIN,Math.min(YMAX,db)))/(YMAX-YMIN)*gh;
+  const M=m0(), v0=Math.log10(M.f0), v1=Math.log10(M.f1);
+  ctx.clearRect(0,0,W,H);
+
+  ctx.fillStyle="rgba(30,74,90,.09)";
+  ctx.fillRect(px(Math.max(L,v0)),m.t,px(Math.min(R,v1))-px(Math.max(L,v0)),gh);
+  ctx.fillStyle="#1E4A5A"; ctx.font=(isModal?"13px":"10px")+" Archivo, sans-serif"; ctx.textAlign="center";
+  if(px(Math.min(R,v1))-px(Math.max(L,v0))>(isModal?140:95))
+    ctx.fillText("model bu aralıktaki ölçümlere dayanıyor",(px(Math.max(L,v0))+px(Math.min(R,v1)))/2,m.t+(isModal?18:11));
+
+  ctx.strokeStyle="rgba(22,24,27,.13)"; ctx.lineWidth=1; ctx.font=(isModal?"12px":"9.5px")+" 'IBM Plex Mono', monospace";
+  for(let db=0;db>=YMIN;db-=20){
+    const y=Math.round(py(db))+.5;
+    ctx.beginPath();ctx.moveTo(m.l,y);ctx.lineTo(W-m.r,y);ctx.stroke();
+    ctx.fillStyle="#5B5F63";ctx.textAlign="right";ctx.fillText(db===0?"0":"−"+Math.abs(db),m.l-(isModal?9:5),y+3.5);
+  }
+  ctx.textAlign="center";
+  [[6,"1 M"],[7,"10 M"],[8,"100 M"],[9,"1 G"],[10,"10 G"],[11,"100 G"],[12,"1 T"],[13,"10 T"],[14,"100 T"],[15,"1 P"]]
+   .forEach(([lf,e])=>{const x=Math.round(px(lf))+.5;
+    ctx.strokeStyle="rgba(22,24,27,.13)";ctx.beginPath();ctx.moveTo(x,m.t);ctx.lineTo(x,m.t+gh);ctx.stroke();
+    ctx.fillStyle="#5B5F63";ctx.fillText(e,x,H-(isModal?13:8));});
+  ctx.save();ctx.translate(isModal?18:10,m.t+gh/2);ctx.rotate(-Math.PI/2);
+  ctx.fillStyle="#5B5F63";ctx.font=(isModal?"13px":"10.5px")+" Archivo, sans-serif";ctx.fillText("dB",0,0);ctx.restore();
+  ctx.fillStyle="#5B5F63";ctx.font=(isModal?"13px":"10px")+" Archivo, sans-serif";ctx.fillText("frekans (Hz)",m.l+gw/2,H-(isModal?3:1));
+
+  // eğriler: geçerlilik içinde düz, dışında kesik
+  const ciz=(alan,renk,kal,icinde)=>{
+    ctx.beginPath(); let acik=false;
+    TAYF.forEach(d=>{
+      const ic = d.lf>=v0 && d.lf<=v1;
+      if(ic!==icinde){acik=false;return;}
+      const x=px(d.lf),y=py(d[alan]);
+      if(!acik){ctx.moveTo(x,y);acik=true;} else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle=renk; ctx.lineWidth=isModal?kal*1.35:kal; ctx.lineJoin="round";
+    ctx.setLineDash(icinde?[]:[5,4]); ctx.stroke(); ctx.setLineDash([]);
+  };
+  ciz("R","rgba(30,74,90,.75)",1.2,true);  ciz("R","rgba(30,74,90,.45)",1.2,false);
+  ciz("T","#8A3A1E",1.8,true);              ciz("T","rgba(138,58,30,.6)",1.4,false);
+
+  ctx.font=(isModal?"13px":"10.5px")+" Archivo, sans-serif"; ctx.textAlign="left";
+  ctx.fillStyle="#8A3A1E"; ctx.fillText("geçen |T|²",px(6.15),py(TAYF[12].T)-(isModal?12:7));
+  ctx.fillStyle="rgba(30,74,90,.95)"; ctx.fillText("yansıyan |Γ|²",px(12.2),py(-16.1));
+
+  [-10,-30].forEach(db=>{
+    const ff=esikBul(db); if(!ff)return;
+    const x=Math.round(px(Math.log10(ff)))+.5;
+    ctx.strokeStyle="rgba(22,24,27,.42)";ctx.setLineDash([2,3]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,py(db));ctx.lineTo(x,m.t+gh);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(x,py(db),isModal?4.5:2.5,0,7);ctx.fillStyle="#8A3A1E";ctx.fill();
+    const [a,u]=frekansYaz(ff);
+    ctx.save();ctx.translate(x-(isModal?6:3),m.t+gh-(isModal?12:7));ctx.rotate(-Math.PI/2);
+    ctx.font=(isModal?"12px":"9.5px")+" 'IBM Plex Mono', monospace";ctx.textAlign="left";ctx.fillStyle="#16181B";
+    ctx.fillText(db+" dB ← "+a+" "+u,0,0);ctx.restore();
+  });
+
+  const cx=Math.round(px(Math.log10(f)))+.5;
+  ctx.strokeStyle=rgb(isaretRengi(f));ctx.lineWidth=isModal?2.4:1.5;
+  ctx.beginPath();ctx.moveTo(cx,m.t);ctx.lineTo(cx,m.t+gh);ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,py(10*Math.log10(Math.max(s.Tp,1e-300))),isModal?5.5:3.5,0,7);
+  ctx.fillStyle=rgb(isaretRengi(f));ctx.fill();
+}
+
+function tayfCiz(){
+  renderTayfCanvas(tayf, tctx, false);
+  const e3=esikBul(-3),e10=esikBul(-10),e30=esikBul(-30);
+  const y=x=>{if(!x)return"—";const[a,u]=frekansYaz(x);return a+" "+u;};
+  let acilma=null, kapali=false;
+  for(const p of TAYF){
+    if(p.T<-30) kapali=true;
+    else if(kapali && p.T>-3){ acilma=Math.pow(10,p.lf); kapali=false; }
+  }
+  const bas=`${kalinlikYaz(+kSlider.value)} ${m0().ad.toLowerCase()}: `;
+  const metin = acilma
+    ? bas+`kayıp ${y(e30)} üzerinde 30 dB’yi aşıyor, ama malzeme burada kapanıp kalmıyor — `+
+      `${y(acilma)} civarında yeniden açılıyor. Ortadaki opak bölge kızılötesi fonon soğurmasıdır; `+
+      `açılan pencere görünür ışığın geçtiği yerdir ve ${y(e3)} üzerinde morötesi kenarıyla kapanır.`
+    : bas+`kayıp ${y(e3)} üzerinde 3 dB’yi, ${y(e10)} üzerinde 10 dB’yi, ${y(e30)} üzerinde 30 dB’yi aşıyor. `+
+      `Geçirgenden opağa dönüş bu üç frekansın arasında oluyor.`;
+  $("tayfAlt").textContent = metin;
+
+  if(modalAcik){
+    renderTayfCanvas(tayfModal, mctx, true);
+    $("modalBaslik").textContent = `${kalinlikYaz(+kSlider.value)} ${m0().tam} — Frekansa Göre Geçiş ve Yansıma`;
+    $("modalTayfAlt").textContent = metin;
+  }
+}
+
+function modalAc(){
+  modalAcik=true;
+  tayfDialog.showModal();
+  tayfCiz();
+}
+function modalKapat(){
+  modalAcik=false;
+  tayfDialog.close();
+}
+
+$("tayfSarmal").addEventListener("click",modalAc);
+$("btnBuyut").addEventListener("click",modalAc);
+$("btnModalKapat").addEventListener("click",modalKapat);
+tayfDialog.addEventListener("click",e=>{if(e.target===tayfDialog)modalKapat();});
+tayfDialog.addEventListener("close",()=>{modalAcik=false;});
+
+function modalFrekansAyarla(e){
+  const rect=tayfModal.getBoundingClientRect();
+  const scale = rect.width / tayfModal.width;
+  const mLeft = 64 * scale, mRight = 24 * scale;
+  const gw = rect.width - mLeft - mRight;
+  const x = e.clientX - rect.left - mLeft;
+  const frac = Math.max(0, Math.min(1, x / gw));
+  frekansAyarla(Math.pow(10, 6 + frac * 9));
+}
+let modalSurukleniyor=false;
+tayfModal.addEventListener("pointerdown",e=>{
+  modalSurukleniyor=true;
+  tayfModal.setPointerCapture(e.pointerId);
+  modalFrekansAyarla(e);
+});
+tayfModal.addEventListener("pointermove",e=>{if(modalSurukleniyor)modalFrekansAyarla(e);});
+tayfModal.addEventListener("pointerup",e=>{modalSurukleniyor=false;});
+tayfModal.addEventListener("pointercancel",e=>{modalSurukleniyor=false;});
+
+/* ── sahne ── */
+const sahne=$("sahne"), sctx=sahne.getContext("2d");
+const SW=sahne.width, SH=sahne.height;
+const MARJ={l:16,r:16,t:38,b:44};
+const GW=SW-MARJ.l-MARJ.r, GH=SH-MARJ.t-MARJ.b;
+const EKSEN_Y=MARJ.t+GH*0.52, GENLIK=GH*0.33;
+const wxTrue=x=>MARJ.l+(x-SAHNE.x0)/(SAHNE.x1-SAHNE.x0)*GW;
+
+/* Levha çok ince ya da çok kalın olabilir; hava bölgeleri gerçek ölçekte kalsın diye
+   levha bandını 26–120 piksel arasına sıkıştırıp büyütme çarpanını yazıyoruz.       */
+function levhaGeo(){
+  const gercek=KALINLIK/(SAHNE.x1-SAHNE.x0)*GW;
+  const cizilen=Math.max(26,Math.min(120,gercek));
+  const orta=wxTrue(SAHNE.orta);
+  return {x0:orta-cizilen/2, x1:orta+cizilen/2, gercek, cizilen, carpan:cizilen/gercek};
+}
+function pxOf(x){
+  const g=levhaGeo(), ON=on(), ARKA=arka();
+  if(x<ON) return MARJ.l+(x-SAHNE.x0)/(ON-SAHNE.x0)*(g.x0-MARJ.l);
+  if(x<=ARKA) return g.x0+(x-ON)/(ARKA-ON)*(g.x1-g.x0);
+  return g.x1+(x-ARKA)/(SAHNE.x1-ARKA)*(MARJ.l+GW-g.x1);
+}
+
+const RASGELE=(()=>{let sd=12345;const r=()=>{sd=(sd*1103515245+12345)&0x7fffffff;return sd/0x7fffffff;};
+  return Array.from({length:260},()=>({u:r(),v:r(),r:1.2+r()*4.2,g:r()}));})();
+
+function levhaCiz(){
+  const M=m0(), g=levhaGeo(), y0=MARJ.t, y1=MARJ.t+GH, w=g.x1-g.x0;
+  sctx.fillStyle=M.renk;
+  if(M.desen==="cam"){ sctx.globalAlpha=.55; sctx.fillRect(g.x0,y0,w,y1-y0); sctx.globalAlpha=1; }
+  else sctx.fillRect(g.x0,y0,w,y1-y0);
+
+  sctx.save(); sctx.beginPath(); sctx.rect(g.x0,y0,w,y1-y0); sctx.clip();
+  if(M.desen==="beton"){
+    RASGELE.forEach(a=>{sctx.beginPath();sctx.arc(g.x0+a.u*w,y0+a.v*(y1-y0),a.r,0,7);
+      sctx.fillStyle=a.g>.55?"rgba(255,255,255,.20)":"rgba(60,55,48,.16)";sctx.fill();});
+  } else if(M.desen==="tugla"){
+    sctx.strokeStyle="rgba(240,235,228,.55)"; sctx.lineWidth=2.5;
+    for(let y=y0+14;y<y1;y+=26){sctx.beginPath();sctx.moveTo(g.x0,y);sctx.lineTo(g.x1,y);sctx.stroke();}
+    RASGELE.slice(0,60).forEach(a=>{sctx.beginPath();sctx.arc(g.x0+a.u*w,y0+a.v*(y1-y0),a.r*.6,0,7);
+      sctx.fillStyle="rgba(60,30,20,.13)";sctx.fill();});
+  } else if(M.desen==="ahsap"){
+    sctx.strokeStyle="rgba(90,60,25,.28)"; sctx.lineWidth=1;
+    for(let i=0;i<14;i++){const x=g.x0+w*(i+.5)/14;
+      sctx.beginPath();sctx.moveTo(x,y0);
+      for(let y=y0;y<=y1;y+=12) sctx.lineTo(x+Math.sin((y+i*37)/33)*1.6, y);
+      sctx.stroke();}
+  } else if(M.desen==="cam"){
+    const gr=sctx.createLinearGradient(g.x0,y0,g.x1,y1);
+    gr.addColorStop(0,"rgba(255,255,255,.42)"); gr.addColorStop(.5,"rgba(255,255,255,0)");
+    gr.addColorStop(1,"rgba(255,255,255,.22)");
+    sctx.fillStyle=gr; sctx.fillRect(g.x0,y0,w,y1-y0);
+  } else {
+    sctx.fillStyle="rgba(255,255,255,.35)"; sctx.fillRect(g.x0,y0,Math.min(4,w*.2),y1-y0);
+  }
+  sctx.restore();
+  sctx.strokeStyle="rgba(40,36,30,.62)"; sctx.lineWidth=1;
+  sctx.strokeRect(Math.round(g.x0)+.5,y0+.5,Math.round(w),y1-y0-1);
+
+  const yk=y0-9;
+  sctx.strokeStyle="rgba(22,24,27,.55)";
+  sctx.beginPath();
+  sctx.moveTo(g.x0-9,yk); sctx.lineTo(g.x1+9,yk);
+  sctx.moveTo(g.x0+.5,yk-4); sctx.lineTo(g.x0+.5,yk+4);
+  sctx.moveTo(g.x1-.5,yk-4); sctx.lineTo(g.x1-.5,yk+4);
+  sctx.stroke();
+  sctx.fillStyle="#16181B"; sctx.font="11px 'IBM Plex Mono', monospace"; sctx.textAlign="center";
+  const etik = Math.abs(g.carpan-1)>0.12
+    ? kalinlikYaz(+kSlider.value)+"  (çizimde ×"+(g.carpan>=10?g.carpan.toFixed(0):g.carpan.toFixed(1))+")"
+    : kalinlikYaz(+kSlider.value);
+  sctx.fillText(etik,(g.x0+g.x1)/2,yk-7);
+
+  sctx.save(); sctx.translate((g.x0+g.x1)/2, y1-12); sctx.rotate(-Math.PI/2);
+  sctx.font="11.5px Archivo, sans-serif"; sctx.fillStyle="rgba(30,26,20,.62)"; sctx.textAlign="left";
+  sctx.fillText(M.tam,0,4); sctx.restore();
+}
+
+function antenCiz(x,taraf,renk,guc){
+  const px=pxOf(x), y=EKSEN_Y, sd=guc===undefined?1:guc;
+  sctx.strokeStyle="#16181B"; sctx.lineWidth=2; sctx.lineCap="round";
+  sctx.beginPath();sctx.moveTo(px,y-26);sctx.lineTo(px,y+26);sctx.stroke();
+  sctx.beginPath();sctx.moveTo(px,y);sctx.lineTo(px+(taraf>0?12:-12),y);sctx.stroke();
+  sctx.lineWidth=1;
+  for(let i=1;i<=3;i++){
+    sctx.beginPath();
+    sctx.arc(px,y,12+i*9, taraf>0?-1.0:Math.PI-1.0, taraf>0?1.0:Math.PI+1.0);
+    sctx.strokeStyle=rgba(renk,(0.42-i*0.09)*sd); sctx.stroke();
+  }
+}
+function izgaraCiz(){
+  sctx.strokeStyle="rgba(22,24,27,.075)"; sctx.lineWidth=1;
+  for(let x=0;x<=6.0001;x+=0.5){const px=Math.round(pxOf(x))+.5;
+    sctx.beginPath();sctx.moveTo(px,MARJ.t);sctx.lineTo(px,MARJ.t+GH);sctx.stroke();}
+  sctx.fillStyle="#8A867F"; sctx.font="10px 'IBM Plex Mono', monospace"; sctx.textAlign="center";
+  for(let x=0;x<=6.0001;x+=1) sctx.fillText(x+" m",pxOf(x),MARJ.t+GH+13);
+  sctx.strokeStyle="rgba(22,24,27,.20)";
+  sctx.beginPath();sctx.moveTo(MARJ.l,Math.round(EKSEN_Y)+.5);sctx.lineTo(MARJ.l+GW,Math.round(EKSEN_Y)+.5);sctx.stroke();
+}
+
+function sahneCiz(zaman){
+  const renk=isaretRengi(f);
+  sctx.clearRect(0,0,SW,SH); sctx.fillStyle="#EFEDE7"; sctx.fillRect(0,0,SW,SH);
+  izgaraCiz(); levhaCiz();
+
+  const g=levhaGeo();
+  const havaPx = (g.x0-MARJ.l)/(on()-SAHNE.x0);        // piksel / metre (hava)
+  const levhaPx = g.cizilen/KALINLIK;                   // piksel / metre (levha)
+  const dalgaModu = Math.min(s.lam*havaPx, s.lam/s.np*levhaPx) >= 9;
+
+  const N=2200, XA=SAHNE.tx, XB=SAHNE.rx;
+  const wt = azalt?0:(zaman/1000)*2*Math.PI*(dalgaModu?0.9:0);
+  const xs=[],hi=[],lo=[],ins=[];
+  for(let i=0;i<=N;i++){
+    const x=XA+(XB-XA)*i/N; xs.push(x);
+    if(dalgaModu){ const E=alan(s,x);
+      ins.push(E.re*Math.cos(wt)-E.im*Math.sin(wt)); hi.push(kmag(E)); lo.push(0); }
+    else { const [h,l]=zarfHiLo(s,x); hi.push(h); lo.push(l); }
+  }
+  const sy=v=>EKSEN_Y-v*(GENLIK/2);
+
+  sctx.beginPath();
+  xs.forEach((x,i)=>{const p=pxOf(x),q=sy(hi[i]); i?sctx.lineTo(p,q):sctx.moveTo(p,q);});
+  for(let i=xs.length-1;i>=0;i--) sctx.lineTo(pxOf(xs[i]),sy(-hi[i]));
+  sctx.closePath();
+  sctx.fillStyle=rgba(renk,dalgaModu?0.11:0.26); sctx.fill();
+  sctx.strokeStyle=rgba(renk,0.5); sctx.lineWidth=1; sctx.stroke();
+
+  if(!dalgaModu){
+    [1,-1].forEach(sg=>{ sctx.beginPath();
+      xs.forEach((x,i)=>{const p=pxOf(x),q=sy(sg*lo[i]); i?sctx.lineTo(p,q):sctx.moveTo(p,q);});
+      sctx.strokeStyle=rgba(renk,.62); sctx.lineWidth=1.2; sctx.stroke(); });
+  }
+  if(dalgaModu){
+    sctx.beginPath();
+    xs.forEach((x,i)=>{const p=pxOf(x),q=sy(ins[i]); i?sctx.lineTo(p,q):sctx.moveTo(p,q);});
+    sctx.strokeStyle=rgb(renk); sctx.lineWidth=1.7; sctx.lineJoin="round"; sctx.stroke();
+  } else if(!azalt){
+    const per=2.4, tt=((zaman/1000)%per)/per;
+    for(const seg of [[SAHNE.tx,on()],[arka(),SAHNE.rx]]){
+      const x=seg[0]+(seg[1]-seg[0])*tt, [h]=zarfHiLo(s,x);
+      if(h*GENLIK/2<0.4) continue;
+      const p=pxOf(x), gr=sctx.createRadialGradient(p,EKSEN_Y,0,p,EKSEN_Y,16);
+      gr.addColorStop(0,rgba(renk,.55)); gr.addColorStop(1,rgba(renk,0));
+      sctx.fillStyle=gr; sctx.beginPath(); sctx.arc(p,EKSEN_Y,16,0,7); sctx.fill();
+    }
+  }
+
+  antenCiz(SAHNE.tx,+1,renk,1);
+  antenCiz(SAHNE.rx,-1,renk,Math.max(0,Math.min(1,(10*Math.log10(Math.max(s.Tp,1e-300))+60)/60)));
+
+  sctx.textAlign="center"; sctx.font="12px Archivo, sans-serif"; sctx.fillStyle="#16181B";
+  sctx.fillText("kaynak",pxOf(SAHNE.tx),MARJ.t+GH-6);
+  sctx.fillText("alıcı anten",pxOf(SAHNE.rx),MARJ.t+GH-6);
+
+  if(s.Tp>0 && s.Tp<0.02){
+    const G=1/Math.sqrt(s.Tp), x0=g.x1+8, x1=pxOf(SAHNE.rx)+30, yb=MARJ.t+26;
+    sctx.strokeStyle="rgba(22,24,27,.28)"; sctx.setLineDash([3,3]); sctx.lineWidth=1;
+    sctx.strokeRect(x0+.5,yb-19.5,x1-x0,38); sctx.setLineDash([]);
+    sctx.beginPath();
+    const Mn=420;
+    for(let i=0;i<=Mn;i++){
+      const x=arka()+(SAHNE.rx+0.3-arka())*i/Mn, E=alan(s,x);
+      const v=azalt?kmag(E):(E.re*Math.cos(wt||(zaman/1000)*2*Math.PI*0.9)-E.im*Math.sin(wt||(zaman/1000)*2*Math.PI*0.9));
+      const q=yb-Math.max(-1,Math.min(1,v*G))*15, p=x0+(x1-x0)*i/Mn;
+      i?sctx.lineTo(p,q):sctx.moveTo(p,q);
+    }
+    sctx.strokeStyle=rgba(renk,.9); sctx.lineWidth=1.4; sctx.stroke();
+    sctx.textAlign="left"; sctx.font="10.5px 'IBM Plex Mono', monospace"; sctx.fillStyle="#5B5F63";
+    sctx.fillText("geçen alan ×"+(G<1e4?G.toPrecision(3):"10^"+Math.round(Math.log10(G))),x0+4,yb-24);
+  }
+
+  const bx=pxOf(SAHNE.rx)+22, by=EKSEN_Y-30, bh=60, bw=9;
+  sctx.strokeStyle="rgba(22,24,27,.35)"; sctx.strokeRect(bx+.5,by+.5,bw,bh);
+  const dolu=Math.max(0,Math.min(1,(10*Math.log10(Math.max(s.Tp,1e-300))+60)/60));
+  sctx.fillStyle=rgb(renk); sctx.fillRect(bx+1,by+bh-dolu*(bh-2)-1,bw-2,dolu*(bh-2));
+  sctx.textAlign="left"; sctx.font="10px 'IBM Plex Mono', monospace"; sctx.fillStyle="#5B5F63";
+  sctx.fillText("0 dB",bx+bw+4,by+8); sctx.fillText("−60",bx+bw+4,by+bh);
+
+  $("sahneNot").textContent = dalgaModu
+    ? `λ₀ = ${uzunlukYaz(s.lam)} — anlık elektrik alanı çiziliyor. Levhanın önündeki dalgalanma, gelen ve yansıyan dalganın girişimi.`
+    : `λ₀ = ${uzunlukYaz(s.lam)} — bir piksele birden çok dalga düşüyor. Anlık alan yerine |E(x)| zarfı çiziliyor; bu, ışın optiği rejimi.`;
+}
+
+function dongu(t){ sahneCiz(t); requestAnimationFrame(dongu); }
+malzemeSec("beton");
+frekansAyarla(2.4e9);
+requestAnimationFrame(dongu);
+</script>
+</body>
+</html>
